@@ -187,7 +187,7 @@ func (s *Server) getIPAddress(ctx context.Context) (string, error) {
 
 func (s *Server) verifyRecaptcha(ipAddress string, req *faucetpb.FundingRequest) error {
 	log.WithField("ip-address", ipAddress).Info("Verifying captcha...")
-	rr, err := s.r.Check(ipAddress, req.RecaptchaResponse)
+	rr, err := s.r.Check(ipAddress, req.CaptchaResponse)
 	if err != nil {
 		return fmt.Errorf("could not check response: %w", err)
 	}

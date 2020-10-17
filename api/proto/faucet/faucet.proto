@@ -14,11 +14,10 @@ service Faucet {
 
 message FundingRequest {
     string wallet_address = 1;
-    string recaptcha_site_key = 2;
-    string recaptcha_response = 3;
+    string captcha_response = 2;
 }
 
 message FundingResponse {
-    string amount = 2;
-    string transaction_hash = 3;
+    string amount = 1;
+    string transaction_hash = 2;
 }
