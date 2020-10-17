@@ -2,8 +2,6 @@
 
 This project defines a production ready faucet for the Ethereum Goerli test network, allowing users to receive 32.5 Goerli ETH every 24 hours to an address from a max of 5 different IP addresses (configurable). The API tracks IP addresses and wallet addresses which requested and flushes them out every 24 hours to allow them to request again the next day.
 
-![Image](https://i.imgur.com/8hYUlgN.png)
-
 ## Running the Faucet API
 
 Install Go [here](https://golang.org/doc/install)
