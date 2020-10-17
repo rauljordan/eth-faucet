@@ -6,7 +6,7 @@ import "google/api/annotations.proto";
 service Faucet {
     rpc RequestFunds(FundingRequest) returns (FundingResponse) {
         option (google.api.http) = {
-            post: "/v1/api/faucet/request",
+            post: "/api/v1/faucet/request",
             body: "*"
         };
     }

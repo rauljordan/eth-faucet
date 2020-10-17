@@ -1,7 +1,8 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
-import { AppRoutingModule } from './app-routing.module';
+import { ENVIRONMENT } from '../environments/token';
+import { environment } from '../environments/environment';
 import { AppComponent } from './app.component';
 
 @NgModule({
@@ -10,9 +11,10 @@ import { AppComponent } from './app.component';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
   ],
-  providers: [],
+  providers: [
+    { provide: ENVIRONMENT, useValue: environment },
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
