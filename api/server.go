@@ -186,7 +186,7 @@ func (s *Server) getIPAddress(ctx context.Context) (string, error) {
 }
 
 func (s *Server) verifyRecaptcha(ipAddress string, req *faucetpb.FundingRequest) error {
-	log.WithField("ip-address", ipAddress).Info("Verifying captcha...")
+	log.WithField("ipAddress", ipAddress).Info("Verifying captcha...")
 	rr, err := s.r.Check(ipAddress, req.CaptchaResponse)
 	if err != nil {
 		return fmt.Errorf("could not check response: %w", err)
@@ -215,6 +215,7 @@ func ipAddressCounterWatcher() {
 	for {
 		<-ticker.C
 		fundingLock.Lock()
+		log.Info("Decreasing requests counter for all recorded IP addresses")
 		for ip, ctr := range ipCounter {
 			if ctr == 0 {
 				continue

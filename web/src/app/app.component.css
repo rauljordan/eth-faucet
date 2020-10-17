@@ -1,0 +1,47 @@
+.mat-toolbar {
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+a {
+  color: white;
+}
+
+.results {
+  margin-bottom: 20px;
+}
+
+.etherscan {
+  color: black;
+}
+
+.progress-container {
+  height: 10px;
+}
+
+.example-card {
+  max-width: 400px;
+  margin-top: 100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-top: 20px;
+  padding-bottom: 10px;
+}
+
+.example-header-image {
+  background-image: url('https://ih1.redbubble.net/image.529445044.0787/st,small,845x845-pad,1000x1000,f8f8f8.u7.jpg');
+  background-size: cover;
+}
+
+.mat-form-field {
+  width: 100%;
+}
+
+.form-field-container {
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
