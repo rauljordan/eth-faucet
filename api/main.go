@@ -29,7 +29,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
 	if err != nil {
-		log.WithError(err).Fatal("Could not listen on port %d", *port)
+		log.WithError(err).Fatalf("Could not listen on port %d", *port)
 	}
 	grpcServer := grpc.NewServer()
 	server, err := New(
