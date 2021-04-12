@@ -50,12 +50,15 @@ func init() {
 	rootCmd.Flags().String("grpc-host", "127.0.0.1", "Host to serve gRPC requests")
 	rootCmd.Flags().Int("http-port", 8000, "Port to serve REST http requests")
 	rootCmd.Flags().String("http-host", "127.0.0.1", "Host to serve REST http requests")
-	rootCmd.Flags().String("allowed-origins", "*", "Allowed origins for REST http requests, comma-separated")
+	rootCmd.Flags().StringSlice("allowed-origins", []string{"*"}, "Allowed origins for REST http requests, comma-separated")
 	rootCmd.Flags().String("captcha-host", "", "Host for the captcha validation")
 	rootCmd.Flags().String("captcha-secret", "", "Secret for captcha validation")
 	rootCmd.Flags().Float64("captcha-min-score", 0.9, "Minimum passing captcha score")
 	rootCmd.Flags().String("web3-provider", "http://localhost:8545", "HTTP web3provider endpoint to an Ethereum node")
 	rootCmd.Flags().String("private-key", "", "Private key hex string of the funder of the faucet")
+	rootCmd.Flags().String("funding-amount", "32500000000000000000", "Amount in wei to fund with each request")
+	rootCmd.Flags().String("gas-limit", "40000", "Gas limit for funding transactions")
+	rootCmd.Flags().Int("ip-limit-per-address", 5, "Number of ip's allowed per funding address")
 
 	// Bind all flags to a viper configuration.
 	if err := viper.BindPFlags(rootCmd.Flags()); err != nil {

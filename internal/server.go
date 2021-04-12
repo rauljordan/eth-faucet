@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"crypto/ecdsa"
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
@@ -29,14 +30,7 @@ var (
 	log = logrus.WithField("prefix", "api")
 )
 
-const (
-	ipLimit          = 5 // 5 IP addresses per goerli address allowed.
-	txGasLimit       = 40000
-	fundingAmountWei = "32500000000000000000" // 32.5 ETH in Wei.
-)
-
 var (
-	fundingAmount *big.Int
 	funded        = make(map[string]bool)
 	ipCounter     = make(map[string]int)
 	fundingLock   sync.Mutex
@@ -44,36 +38,34 @@ var (
 	_             = faucetpb.FaucetServer(&Server{})
 )
 
-func init() {
-	var ok bool
-	fundingAmount, ok = new(big.Int).SetString(fundingAmountWei, 10)
-	if !ok {
-		log.Fatal("could not set funding amount")
-	}
-}
-
+// Config for the faucet server.
 type Config struct {
-	GrpcPort        int     `mapstructure:"grpc-port"`
-	GrpcHost        string  `mapstructure:"grpc-host"`
-	HttpPort        int     `mapstructure:"http-port"`
-	HttpHost        string  `mapstructure:"http-host"`
-	AllowedOrigins  string  `mapstructure:"allowed-origins"`
-	CaptchaHost     string  `mapstructure:"captcha-host"`
-	CaptchaSecret   string  `mapstructure:"captcha-secret"`
-	CaptchaMinScore float64 `mapstructure:"captcha-min-score"`
-	Web3Provider    string  `mapstructure:"web3-provider"`
-	PrivateKey      string  `mapstructure:"private-key"`
+	GrpcPort          int      `mapstructure:"grpc-port"`
+	GrpcHost          string   `mapstructure:"grpc-host"`
+	HttpPort          int      `mapstructure:"http-port"`
+	HttpHost          string   `mapstructure:"http-host"`
+	AllowedOrigins    []string `mapstructure:"allowed-origins"`
+	CaptchaHost       string   `mapstructure:"captcha-host"`
+	CaptchaSecret     string   `mapstructure:"captcha-secret"`
+	CaptchaMinScore   float64  `mapstructure:"captcha-min-score"`
+	Web3Provider      string   `mapstructure:"web3-provider"`
+	PrivateKey        string   `mapstructure:"private-key"`
+	FundingAmount     string   `mapstructure:"funding-amount"`
+	GasLimit          string   `mapstructure:"gas-limit"`
+	IpLimitPerAddress int      `mapstructure:"ip-limit-per-address"`
 }
 
+// Server capable of funding requests for faucet ETH via gRPC and REST HTTP.
 type Server struct {
 	faucetpb.UnimplementedFaucetServer
-	cfg         *Config
-	captcha     recaptcha.Recaptcha
-	client      *ethclient.Client
-	funder      common.Address
-	pk          *ecdsa.PrivateKey
-	minScore    float64
-	captchaHost string
+	cfg           *Config
+	captcha       recaptcha.Recaptcha
+	client        *ethclient.Client
+	funder        common.Address
+	pk            *ecdsa.PrivateKey
+	minScore      float64
+	captchaHost   string
+	fundingAmount *big.Int
 }
 
 func NewServer(cfg *Config) (*Server, error) {
@@ -85,10 +77,15 @@ func NewServer(cfg *Config) (*Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not parse funder private key: %v", err)
 	}
+	fundingAmount, ok := new(big.Int).SetString(cfg.FundingAmount, 10)
+	if !ok {
+		return nil, errors.New("could not set funding amount")
+	}
 	return &Server{
-		cfg:     cfg,
-		captcha: recaptcha.Recaptcha{RecaptchaPrivateKey: cfg.CaptchaSecret},
-		pk:      pk,
+		cfg:           cfg,
+		captcha:       recaptcha.Recaptcha{RecaptchaPrivateKey: cfg.CaptchaSecret},
+		pk:            pk,
+		fundingAmount: fundingAmount,
 	}, nil
 }
 
@@ -119,14 +116,10 @@ func (s *Server) Start() {
 	}()
 
 	// Start a gRPC Gateway to serve JSON-HTTP requests.
-	origins := []string{s.cfg.AllowedOrigins}
-	if strings.Contains(s.cfg.AllowedOrigins, ",") {
-		origins = strings.Split(s.cfg.AllowedOrigins, ",")
-	}
 	gatewaySrv := gateway.New(ctx, &gateway.Config{
 		GatewayAddress:      fmt.Sprintf("%s:%d", s.cfg.HttpHost, s.cfg.HttpPort),
 		RemoteAddress:       fmt.Sprintf("%s:%d", s.cfg.GrpcHost, s.cfg.GrpcPort),
-		AllowedOrigins:      origins,
+		AllowedOrigins:      s.cfg.AllowedOrigins,
 		EndpointsToRegister: []gateway.RegistrationFunc{faucetpb.RegisterFaucetHandlerFromEndpoint},
 	})
 	gatewaySrv.Start()
