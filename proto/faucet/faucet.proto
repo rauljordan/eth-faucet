@@ -1,0 +1,23 @@
+syntax = "proto3";
+package faucet;
+
+import "google/api/annotations.proto";
+
+service Faucet {
+    rpc RequestFunds(FundingRequest) returns (FundingResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/faucet/request",
+            body: "*"
+        };
+    }
+}
+
+message FundingRequest {
+    string wallet_address = 1;
+    string captcha_response = 2;
+}
+
+message FundingResponse {
+    string amount = 1;
+    string transaction_hash = 2;
+}
