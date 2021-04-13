@@ -23,8 +23,6 @@ make go
 
 ### Faucet Server
 
-1. Sign-up for Google recaptcha in the admin portal [here](http://www.google.com/recaptcha/admin)
-
 ```bash
 ./dist/faucet --help
 ```
@@ -37,6 +35,12 @@ Run a faucet server for Ethereum using captcha for verification and ip-based rat
 Usage:
   faucet [flags]
 ```
+
+1. Sign-up for Google recaptcha in the admin portal [here](http://www.google.com/recaptcha/admin)
+2. Make note of the captcha secret key and the captcha site key
+3. Obtain your testnet private key where the faucet funds will be coming from in *hex string format* (such as 0xa8b01...)
+4. Obtain the address of your Ethereum node's HTTP API endpoint (by default, the faucet server uses http://localhost:8545 as the web3-provider)
+5. Run the faucet server with the required [parameters](#parameters)
 
 The faucet host an http JSON API on localhost:8000 by default and a gRPC server on localhost:500 for client access. Further customizations and required parameters are specified below:
 
@@ -93,7 +97,10 @@ and running the faucet server by specifying the path to the configuration file a
 
 ### Sample Angular Project
 
-Install the latest version of [Node.js](https://nodejs.org/en/download/). Then, run the faucet server. Finally:
+1. Install the latest version of [Node.js](https://nodejs.org/en/download/). 
+2. Paste in the **captcha site key** from the [usage](#usage) step in `./web/ng/src/environments/environment.ts` or `./web/ng/src/environments/environment.prod.ts` if building for production
+3. Run the faucet server as specified in [usage](#usage)
+4. Run the Angular app as follows:
 
 ```
 cd web/ng
@@ -103,18 +110,7 @@ npm start
 
 Then navigate to http://localhost:4200 and try it out!
 
-### Sample React Project
-
-Install the latest version of [Node.js](https://nodejs.org/en/download/). Then, run the faucet server. Finally:
-
-```
-cd web/react
-npm install -g yarn
-yarn install
-npm start
-```
-
-Then navigate to http://localhost:3000 and try it out!
+You can build it for production with `npm run build`
 
 ## Contributing
 
