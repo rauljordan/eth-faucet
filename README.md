@@ -1,6 +1,6 @@
 # Ethereum Testnet Faucet 🚿
 
-This project defines a production ready faucet for the Ethereum test networks, allowing users to request and receive a specified amount of ETH every 24 hours to an address from a max of N different IP addresses (configurable) after passing [captcha]() verification. The API tracks IP addresses and wallet addresses which requested and resets them at configurable intervals.
+This project defines a production ready faucet for the Ethereum test networks, allowing users to request and receive a specified amount of ETH every 24 hours to an address from a max of N different IP addresses (configurable) after passing [Google recaptcha](https://www.google.com/recaptcha/about/) verification. The API tracks IP addresses and wallet addresses which requested and resets them at configurable intervals.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Go](https://github.com/rauljordan/eth-faucet/actions/workflows/go.yml/badge.svg)](https://github.com/rauljordan/eth-faucet/actions/workflows/go.yml) ![ReportCard](https://goreportcard.com/badge/github.com/rauljordan/eth-faucet)
 
