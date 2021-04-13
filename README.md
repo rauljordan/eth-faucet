@@ -2,6 +2,8 @@
 
 This project defines a production ready faucet for the Ethereum test networks, allowing users to request and receive a specified amount of ETH every 24 hours to an address from a max of N different IP addresses (configurable) after passing [Google recaptcha](https://www.google.com/recaptcha/about/) verification. The API tracks IP addresses and wallet addresses which requested and resets them at configurable intervals.
 
+The project comes with functional **React** and **Angular** applications to showcase the faucet.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Go](https://github.com/rauljordan/eth-faucet/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/rauljordan/eth-faucet/actions/workflows/go.yml) ![ReportCard](https://goreportcard.com/badge/github.com/rauljordan/eth-faucet)
 
 <img width="400" alt="Screen Shot 2021-04-12 at 9 44 16 PM" src="https://user-images.githubusercontent.com/5572669/114489164-4a7ed780-9bd8-11eb-92ee-3e140a25fafd.png">
@@ -99,6 +101,10 @@ and running the faucet server by specifying the path to the configuration file a
 
 ### Sample Angular Project
 
+The Angular project allows you to enter your ETH wallet address, complete a captcha verification, and waits for a transaction to complete:
+
+<img width="400" alt="Screen Shot 2021-04-12 at 9 44 16 PM" src="https://user-images.githubusercontent.com/5572669/114489164-4a7ed780-9bd8-11eb-92ee-3e140a25fafd.png">
+
 1. Install the latest version of [Node.js](https://nodejs.org/en/download/). 
 2. Paste in the **captcha site key** from the [usage](#usage) step in `./web/ng/src/environments/environment.ts` or `./web/ng/src/environments/environment.prod.ts` if building for production
 3. Run the faucet server as specified in [usage](#usage)
@@ -111,6 +117,24 @@ npm start
 ```
 
 Then navigate to http://localhost:4200 and try it out!
+
+You can build it for production with `npm run build`
+
+### Sample React Project
+
+1. Install the latest version of [Node.js](https://nodejs.org/en/download/).
+2. Paste in the **captcha site key** from the [usage](#usage) step in `./web/react-example/src/environment.ts`.
+3. Run the faucet server as specified in [usage](#usage)
+4. Run the React app as follows:
+
+```
+cd web/react-example
+npm install -g yarn
+yarn install
+npm start
+```
+
+Then navigate to http://localhost:3000 and try it out!
 
 You can build it for production with `npm run build`
 
