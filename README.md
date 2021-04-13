@@ -122,6 +122,9 @@ You can build it for production with `npm run build`
 
 ### Sample React Project
 
+<img width="400" alt="Screen Shot 2021-04-13 at 8 53 23 AM" src="https://user-images.githubusercontent.com/5572669/114565694-23a3be00-9c37-11eb-98a6-78d4f4a7314f.png">
+
+
 1. Install the latest version of [Node.js](https://nodejs.org/en/download/).
 2. Paste in the **captcha site key** from the [usage](#usage) step in `./web/react-example/src/environment.ts`.
 3. Run the faucet server as specified in [usage](#usage)
