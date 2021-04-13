@@ -4,6 +4,8 @@ This project defines a production ready faucet for the Ethereum test networks, a
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Go](https://github.com/rauljordan/eth-faucet/actions/workflows/go.yml/badge.svg)](https://github.com/rauljordan/eth-faucet/actions/workflows/go.yml) ![ReportCard](https://goreportcard.com/badge/github.com/rauljordan/eth-faucet)
 
+<img width="400" alt="Screen Shot 2021-04-12 at 9 44 16 PM" src="https://user-images.githubusercontent.com/5572669/114489164-4a7ed780-9bd8-11eb-92ee-3e140a25fafd.png">
+
 
 ## Links
 
