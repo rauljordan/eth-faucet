@@ -23,7 +23,7 @@ make go
 
 ### Faucet Server
 
-1. Sign-up for Google recaptcha
+1. Sign-up for Google recaptcha in the admin portal [here](http://www.google.com/recaptcha/admin)
 
 ```bash
 ./dist/faucet --help

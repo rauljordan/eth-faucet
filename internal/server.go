@@ -72,8 +72,15 @@ func NewServer(cfg *Config) (*Server, error) {
 	if !ok {
 		return nil, errors.New("could not set funding amount")
 	}
+	client, err := ethclient.DialContext(context.Background(), cfg.Web3Provider)
+	if err != nil {
+		return nil, fmt.Errorf("could not dial %s: %w", cfg.Web3Provider, err)
+	}
+	funder := crypto.PubkeyToAddress(pk.PublicKey)
 	return &Server{
 		cfg:           cfg,
+		client:        client,
+		funder:        funder,
 		captcha:       recaptcha.Recaptcha{RecaptchaPrivateKey: cfg.CaptchaSecret},
 		pk:            pk,
 		fundingAmount: fundingAmount,
@@ -142,19 +149,14 @@ func (s *Server) Start() {
 
 // Query the funds left in the faucet account and log them to the uer.
 func (s *Server) queryFundsLeft(ctx context.Context) {
-	client, err := ethclient.DialContext(ctx, s.cfg.Web3Provider)
-	if err != nil {
-		log.WithError(err).Fatalf("Could not dial %s", s.cfg.Web3Provider)
-	}
-	funder := crypto.PubkeyToAddress(s.pk.PublicKey)
-	bal, err := client.BalanceAt(ctx, funder, nil)
+	bal, err := s.client.BalanceAt(ctx, s.funder, nil)
 	if err != nil {
 		log.WithError(err).Fatalf("Could not retrieve funder's current balance")
 	}
 
 	log.WithFields(logrus.Fields{
 		"fundsInWei": bal,
-		"publicKey":  funder.Hex(),
+		"publicKey":  s.funder.Hex(),
 	}).Info("Funder account details")
 }
 

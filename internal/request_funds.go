@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const weiPerETH = 1e18
+
 // RequestFunds from an Ethereum faucet. Requires a valid captcha response.
 func (s *Server) RequestFunds(
 	ctx context.Context, req *faucetpb.FundingRequest,
@@ -52,8 +54,10 @@ func (s *Server) RequestFunds(
 		"requesterAddress": req.WalletAddress,
 	}).Info("Funded successfully")
 
+	fundingAmountWei := new(big.Float).SetInt(s.fundingAmount)
+	fundedETH := new(big.Float).Quo(fundingAmountWei, big.NewFloat(weiPerETH))
 	return &faucetpb.FundingResponse{
-		Amount:          s.fundingAmount.String(),
+		Amount:          fundedETH.String(),
 		TransactionHash: txHash,
 	}, nil
 }

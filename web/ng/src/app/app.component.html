@@ -1,7 +1,7 @@
 <mat-toolbar color="primary" class="mat-elevation-z4">
-  <span>Goerli Testnet Faucet</span>
+  <span>ETH Testnet Faucet</span>
   <span class="spacer"></span>
-  <a href="https://github.com/rauljordan/goerli-faucet" target="_blank">
+  <a href="https://github.com/rauljordan/eth-faucet" target="_blank">
     <button mat-button class="example-icon" aria-label="Example icon-button with share icon">
       View on Github <mat-icon>favorite</mat-icon>
     </button>
@@ -17,24 +17,24 @@
     <mat-card-header>
       <div mat-card-avatar class="example-header-image"></div>
       <mat-card-title>Get Testnet ETH</mat-card-title>
-      <mat-card-subtitle>Request ETH to your Goerli wallet address</mat-card-subtitle>
+      <mat-card-subtitle>Request ETH to your wallet address</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
       <div *ngIf="transactionHash" class="results">
         <div>
-          <a class="etherscan" href="https://goerli.etherscan.io/tx/someone" target="_blank">
+          <a class="etherscan" href="https://eth.etherscan.io/tx/{{transactionHash}}" target="_blank">
             View on Etherscan
           </a>
         </div>
       </div>
       <div class="form-field-container">
         <mat-form-field appearance="fill">
-          <mat-label>Goerli Wallet Address</mat-label>
-          <input matInput placeholder="Placeholder" name="walletAddress" formControlName="walletAddress">
+          <mat-label>ETH Wallet Address</mat-label>
+          <input matInput placeholder="0x..." name="walletAddress" formControlName="walletAddress">
           <mat-icon matSuffix>account_balance_wallet</mat-icon>
         </mat-form-field>
         <mat-error *ngIf="formGroup.dirty && formGroup.controls.walletAddress.hasError('required')">
-          Eth1 goerli address is required
+          ETH address is required
         </mat-error>
       </div>
       <button mat-raised-button color="accent" (click)="submit($event)" [disabled]="loading">Request Funds</button>

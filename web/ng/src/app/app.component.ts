@@ -39,7 +39,7 @@ export class AppComponent implements OnInit {
       tap((res: FundsResponse) => {
         this.loading = false;
         this.transactionHash = res.transactionHash;
-        const message = 'Funded with 32.5 Goerli ETH';
+        const message = `Funded with ${res.amount} ETH`;
         this.snackbar.open(message, 'Close', {
           duration: 2000,
         });
