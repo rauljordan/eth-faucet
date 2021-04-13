@@ -12,6 +12,9 @@ type rateLimiter interface {
 	markAsFunded(ipAddress, ethAddress string)
 }
 
+// Simple rate limiter uses a basic strategy of keeping ip addresses
+// in memory and limiting requests to a max limit of ip addresses per
+// ETH address requesting faucet funds.
 type simpleRateLimiter struct {
 	mutex                sync.RWMutex
 	ipLimitPerAddress    int

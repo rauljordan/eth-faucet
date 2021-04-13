@@ -80,8 +80,10 @@ func initConfig() {
 	// Use config file from the flag.
 	viper.SetConfigFile(cfgFilePath)
 	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err != nil {
-		log.WithError(err).Fatalf("Could not read config file: %s", viper.ConfigFileUsed())
+	if cfgFilePath != "" {
+		if err := viper.ReadInConfig(); err != nil {
+			log.WithError(err).Fatalf("Could not read config file: %s", viper.ConfigFileUsed())
+		}
 	}
 }
 

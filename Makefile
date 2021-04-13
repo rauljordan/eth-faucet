@@ -1,5 +1,5 @@
 go:
-	go get . && go build -o faucet .
+	go get . && go build -o ./dist/faucet .
 protos:
 	protoc -Iproto --grpc-gateway_out=logtostderr=true,paths=source_relative:proto\
 	  proto/faucet/faucet.proto
