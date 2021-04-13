@@ -23,6 +23,9 @@ const weiPerETH = 1e18
 func (s *Server) RequestFunds(
 	ctx context.Context, req *faucetpb.FundingRequest,
 ) (*faucetpb.FundingResponse, error) {
+	if req.WalletAddress == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "Request needs a valid ETH wallet address")
+	}
 	ipAddress, err := s.getIPAddress(ctx)
 	if err != nil {
 		log.WithError(err).Error("Could not fetch IP from request")
@@ -30,6 +33,7 @@ func (s *Server) RequestFunds(
 	}
 
 	// Verify the provided captcha in the request.
+	log.WithField("ipAddress", ipAddress).Info("Verifying captcha...")
 	if err := s.verifyRecaptcha(ipAddress, req); err != nil {
 		log.WithError(err).Error("Failed captcha verification")
 		return nil, status.Errorf(codes.PermissionDenied, "Failed captcha verification: %v", err)
@@ -40,6 +44,10 @@ func (s *Server) RequestFunds(
 		return nil, status.Error(codes.PermissionDenied, "Funded too recently")
 	}
 
+	log.WithFields(logrus.Fields{
+		"ipAddress": ipAddress,
+		"address":   req.WalletAddress,
+	}).Info("Attempting to fund address")
 	txHash, err := s.fundAndWait(common.HexToAddress(req.WalletAddress))
 	if err != nil {
 		log.WithError(err).Error("Could not send goerli transaction")
@@ -87,12 +95,18 @@ func (s *Server) fundAndWait(to common.Address) (string, error) {
 	}
 
 	// Wait for transaction to mine.
+	log.WithField("txHash", fmt.Sprintf("%#x", tx.Hash())).Info("Awaiting for tx to mine...")
+	start := time.Now()
 	for pending := true; pending; _, pending, err = s.client.TransactionByHash(context.Background(), tx.Hash()) {
 		if err != nil {
 			return "", fmt.Errorf("could not wait for tx to mine: %w", err)
 		}
 		time.Sleep(1 * time.Second)
 	}
+	log.WithFields(logrus.Fields{
+		"timeElapsed": fmt.Sprintf("%v", time.Since(start)),
+		"txHash":      fmt.Sprintf("%#x", tx.Hash()),
+	}).Info("Transaction mined")
 	return tx.Hash().Hex(), nil
 }
 
