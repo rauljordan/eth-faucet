@@ -9,7 +9,7 @@ import Container from '@material-ui/core/Container';
 import {LinearProgress, Snackbar} from '@material-ui/core';
 import MuiAlert from '@material-ui/lab/Alert';
 
-import { FundsRequest, requestFunds } from '../services/requestFunds';
+import { FundsRequest, FundsResponse, requestFunds } from '../services/requestFunds';
 import { useRecaptcha } from '../hooks/recaptcha';
 import { environment } from '../environment';
 
@@ -39,8 +39,10 @@ const Alert = (props: any) => {
 const FaucetForm = () => {
     const classes = useStyles();
     const [address, setAddress] = useState("");
+    const [fundsResponse, setFundsResponse] = useState({} as FundsResponse);
     const [inProgress, setInProgress] = useState(false);
-    const [open, setOpen] = React.useState(false);
+    const [openErr, setOpenErr] = React.useState(false);
+    const [openFunded, setOpenFunded] = React.useState(false);
     const [error, setError] = React.useState(undefined);
     const executeCaptcha = useRecaptcha({
         sitekey: environment.captchaSiteKey,
@@ -49,7 +51,6 @@ const FaucetForm = () => {
     const handleSubmit = (e: FormEvent) => doRequestFunds(e);
     const doRequestFunds = async (e: FormEvent) => {
         e.preventDefault();
-        console.log(address);
         try {
             setInProgress(true);
             const token = await executeCaptcha(address);
@@ -57,12 +58,15 @@ const FaucetForm = () => {
                 walletAddress: address,
                 captchaResponse: token,
             } as FundsRequest)
-            console.log(res);
+            setFundsResponse(res);
+            setOpenFunded(true);
             setInProgress(false);
         } catch (err) {
             if (err.response && err.response.data && err.response.data.message) {
-                setOpen(true);
+                setOpenErr(true);
                 setError(err.response.data.message);
+            } else {
+                setError(err);
             }
             setInProgress(false);
         }
@@ -82,6 +86,14 @@ const FaucetForm = () => {
                             inProgress ? 'Requesting...' : 'Request Faucet Funds'
                         }
                     </Typography>
+                    {
+                        fundsResponse.transactionHash &&
+                        <div>
+                            <a href={`https://goerli.etherscan.io/tx/${fundsResponse.transactionHash}`}>
+                                View Transaction on Etherscan
+                            </a>
+                        </div>
+                    }
                     <form className={classes.form} noValidate onSubmit={handleSubmit}>
                         <TextField
                             variant="outlined"
@@ -108,7 +120,12 @@ const FaucetForm = () => {
                     </form>
                 </div>
             </Container>
-            <Snackbar open={open} autoHideDuration={3000}>
+            <Snackbar open={openFunded} autoHideDuration={3000}>
+                <Alert severity="success">
+                    Funded with {fundsResponse.amount}
+                </Alert>
+            </Snackbar>
+            <Snackbar open={openErr} autoHideDuration={3000}>
                 <Alert severity="error">
                     ERROR: {error}
                 </Alert>

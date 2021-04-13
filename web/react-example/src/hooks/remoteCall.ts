@@ -1,12 +1,7 @@
 import axios from 'axios';
 
 export async function PostWithOptionalResponse<T = undefined>(path: string, body?: any) {
-    console.log('right before');
     const res = await axios.post<T>(path, body);
-    console.log(res);
-    if (res.status !== 200) {
-        throw new Error(`failed with ${res}`);
-    }
     return res.data;
 }
 

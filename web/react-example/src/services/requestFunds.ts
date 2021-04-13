@@ -1,6 +1,6 @@
 import { Post } from '../hooks/remoteCall';
+import { requestFundsPath } from './apiEndpoints';
 
-const requestFundsPath = 'http://localhost:8000/api/v1/faucet/request'
 
 export interface FundsRequest {
     walletAddress: string;
