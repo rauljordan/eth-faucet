@@ -9,6 +9,7 @@ require (
 	github.com/prestonvanloon/go-recaptcha v0.0.0-20190217191114-0834cef6e8bd
 	github.com/rauljordan/minimal-grpc-gateway v0.0.0-20201017192135-199fa853d2e0
 	github.com/sirupsen/logrus v1.7.0
+	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	google.golang.org/genproto v0.0.0-20201015140912-32ed001d685c

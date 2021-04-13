@@ -5,7 +5,6 @@ ARG GO_VERSION=1.16
 FROM golang:${GO_VERSION}-alpine AS builder
 
 # Git is required for fetching the dependencies.
-RUN go env -w GOPROXY=direct
 RUN apk add --no-cache git
 RUN apk add ca-certificates
 
@@ -15,13 +14,13 @@ WORKDIR /src
 # Fetch dependencies first; they are less susceptible to change on every build
 # and will therefore be cached for speeding up the next build
 COPY ./go.mod ./go.sum ./
-RUN go mod download
+RUN GO111MODULE=on go mod download
 
 # Import the code from the context.
 COPY ./ ./
 
 # Build the executable to `/app`. Mark the build as statically linked.
-RUN CGO_ENABLED=0 go build \
+RUN GO111MODULE=on CGO_ENABLED=0 go build \
     -installsuffix 'static' \
     -o /app .
 
