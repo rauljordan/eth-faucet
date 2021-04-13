@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/rauljordan/eth-faucet/internal"
 	"github.com/sirupsen/logrus"
@@ -16,6 +17,12 @@ var (
 		Use:   "faucet",
 		Short: "Run a faucet server for Ethereum using captcha",
 		RunE: func(command *cobra.Command, args []string) error {
+			runtime.GOMAXPROCS(runtime.NumCPU())
+			customFormatter := new(logrus.TextFormatter)
+			customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+			logrus.SetFormatter(customFormatter)
+			customFormatter.FullTimestamp = true
+
 			var cfg *internal.Config
 			if err := viper.Unmarshal(&cfg); err != nil {
 				log.Fatal(err)
@@ -57,7 +64,8 @@ func init() {
 	rootCmd.Flags().String("web3-provider", "http://localhost:8545", "HTTP web3provider endpoint to an Ethereum node")
 	rootCmd.Flags().String("private-key", "", "Private key hex string of the funder of the faucet")
 	rootCmd.Flags().String("funding-amount", "32500000000000000000", "Amount in wei to fund with each request")
-	rootCmd.Flags().String("gas-limit", "40000", "Gas limit for funding transactions")
+	rootCmd.Flags().Uint64("gas-limit", 40000, "Gas limit for funding transactions")
+	rootCmd.Flags().Int64("chain-id", 5, "Chain ID for Ethereum (5 is the Goerli test network)")
 	rootCmd.Flags().Int("ip-limit-per-address", 5, "Number of ip's allowed per funding address")
 
 	// Bind all flags to a viper configuration.

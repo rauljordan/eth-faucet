@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RequestFunds from the ethereum 1.x faucet. Requires a valid captcha response.
+// RequestFunds from an Ethereum faucet. Requires a valid captcha response.
 func (s *Server) RequestFunds(
 	ctx context.Context, req *faucetpb.FundingRequest,
 ) (*faucetpb.FundingResponse, error) {
@@ -27,39 +27,33 @@ func (s *Server) RequestFunds(
 		return nil, status.Errorf(codes.FailedPrecondition, "Could not get IP address from request: %v", err)
 	}
 
+	// Verify the provided captcha in the request.
 	if err := s.verifyRecaptcha(ipAddress, req); err != nil {
 		log.WithError(err).Error("Failed captcha verification")
 		return nil, status.Errorf(codes.PermissionDenied, "Failed captcha verification: %v", err)
 	}
 
-	// Check if funded too recently and keep track of funded address.
-	fundingLock.Lock()
-	exceedPeerLimit := ipCounter[ipAddress] >= ipLimit
-	if funded[req.WalletAddress] || exceedPeerLimit {
-		if exceedPeerLimit {
-			log.WithField("ipAddress", ipAddress).Warn("IP trying to get funding despite over request limit")
-		}
-		fundingLock.Unlock()
+	// Check if ip should be rate limited.
+	if !s.rateLimiter.shouldAllowRequest(ipAddress, req.WalletAddress) {
 		return nil, status.Error(codes.PermissionDenied, "Funded too recently")
 	}
-	funded[req.WalletAddress] = true
-	fundingLock.Unlock()
 
 	txHash, err := s.fundAndWait(common.HexToAddress(req.WalletAddress))
 	if err != nil {
 		log.WithError(err).Error("Could not send goerli transaction")
 		return nil, status.Errorf(codes.Internal, "Could not send goerli transaction: %v", err)
 	}
-	fundingLock.Lock()
-	ipCounter[ipAddress]++
-	fundingLock.Unlock()
+
+	// Mark the ip and Ethereum address pair as funded for the rate limiter.
+	s.rateLimiter.markAsFunded(ipAddress, req.WalletAddress)
 
 	log.WithFields(logrus.Fields{
 		"txHash":           txHash,
 		"requesterAddress": req.WalletAddress,
 	}).Info("Funded successfully")
+
 	return &faucetpb.FundingResponse{
-		Amount:          fundingAmount.String(),
+		Amount:          s.fundingAmount.String(),
 		TransactionHash: txHash,
 	}, nil
 }
@@ -74,12 +68,12 @@ func (s *Server) fundAndWait(to common.Address) (string, error) {
 	tx := types.NewTransaction(
 		nonce,
 		to,
-		fundingAmount,
-		txGasLimit,
-		big.NewInt(1*params.GWei),
-		nil, /*data*/
+		s.fundingAmount,
+		s.cfg.GasLimit,
+		big.NewInt(1*params.GWei), /* testnet gas price */
+		nil,                       /* data */
 	)
-	tx, err = types.SignTx(tx, types.NewEIP155Signer(big.NewInt(5)), s.pk)
+	tx, err = types.SignTx(tx, types.NewEIP155Signer(big.NewInt(s.cfg.ChainId)), s.pk)
 	if err != nil {
 		return "", fmt.Errorf("could not sign tx: %w", err)
 	}

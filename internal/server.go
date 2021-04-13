@@ -11,9 +11,7 @@ import (
 	"os/signal"
 	"runtime"
 	"strings"
-	"sync"
 	"syscall"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -27,15 +25,7 @@ import (
 )
 
 var (
-	log = logrus.WithField("prefix", "api")
-)
-
-var (
-	funded        = make(map[string]bool)
-	ipCounter     = make(map[string]int)
-	fundingLock   sync.Mutex
-	pruneDuration = time.Hour * 4
-	_             = faucetpb.FaucetServer(&Server{})
+	log = logrus.WithField("prefix", "server")
 )
 
 // Config for the faucet server.
@@ -51,8 +41,9 @@ type Config struct {
 	Web3Provider      string   `mapstructure:"web3-provider"`
 	PrivateKey        string   `mapstructure:"private-key"`
 	FundingAmount     string   `mapstructure:"funding-amount"`
-	GasLimit          string   `mapstructure:"gas-limit"`
+	GasLimit          uint64   `mapstructure:"gas-limit"`
 	IpLimitPerAddress int      `mapstructure:"ip-limit-per-address"`
+	ChainId           int64    `mapstructure:"chain-id"`
 }
 
 // Server capable of funding requests for faucet ETH via gRPC and REST HTTP.
@@ -63,11 +54,11 @@ type Server struct {
 	client        *ethclient.Client
 	funder        common.Address
 	pk            *ecdsa.PrivateKey
-	minScore      float64
-	captchaHost   string
 	fundingAmount *big.Int
+	rateLimiter   rateLimiter
 }
 
+// NewServer initializes the server from configuration values.
 func NewServer(cfg *Config) (*Server, error) {
 	privKeyHex := cfg.PrivateKey
 	if strings.HasPrefix(privKeyHex, "0x") {
@@ -86,42 +77,51 @@ func NewServer(cfg *Config) (*Server, error) {
 		captcha:       recaptcha.Recaptcha{RecaptchaPrivateKey: cfg.CaptchaSecret},
 		pk:            pk,
 		fundingAmount: fundingAmount,
+		rateLimiter:   newSimpleRateLimiter(cfg.IpLimitPerAddress),
 	}, nil
 }
 
+// Start a faucet server by serving a gRPC connection, an http JSON server, and a rate limiter.
 func (s *Server) Start() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	s.queryFundsLeft()
+	log.WithFields(logrus.Fields{
+		"chainID": s.cfg.ChainId,
+	}).Info("Initializing faucet server")
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.GrpcPort))
-	if err != nil {
-		log.WithError(err).Fatalf("Could not listen on port %d", s.cfg.GrpcPort)
-	}
-	grpcServer := grpc.NewServer()
+	// Query the funds left in the funder's account.
+	s.queryFundsLeft(ctx)
 
-	faucetpb.RegisterFaucetServer(grpcServer, s)
-	reflection.Register(grpcServer)
+	// Initialize and register gRPC handlers.
+	grpcServer := s.initializeGRPCServer()
 
-	// Check IP addresses and reset their max request count over time.
-	go ipAddressCounterWatcher()
-
+	grpcAddress := fmt.Sprintf("%s:%d", s.cfg.GrpcHost, s.cfg.GrpcPort)
 	// Start a gRPC server.
 	go func() {
-		log.Infof("Serving gRPC requests on port %s:%d", s.cfg.GrpcHost, s.cfg.GrpcPort)
+		log.Infof("Starting gRPC server %s", grpcAddress)
+		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", s.cfg.GrpcPort))
+		if err != nil {
+			log.WithError(err).Fatalf("Could not listen on port %d", s.cfg.GrpcPort)
+		}
 		if err := grpcServer.Serve(lis); err != nil {
 			log.WithError(err).Fatal("Stopped server")
 		}
 	}()
 
-	// Start a gRPC Gateway to serve JSON-HTTP requests.
+	// Check IP addresses and reset their max request count over time.
+	go s.rateLimiter.refreshLimits(ctx)
+
+	// Start a gRPC Gateway to serve http JSON requests.
+	gatewayAddress := fmt.Sprintf("%s:%d", s.cfg.HttpHost, s.cfg.HttpPort)
 	gatewaySrv := gateway.New(ctx, &gateway.Config{
-		GatewayAddress:      fmt.Sprintf("%s:%d", s.cfg.HttpHost, s.cfg.HttpPort),
-		RemoteAddress:       fmt.Sprintf("%s:%d", s.cfg.GrpcHost, s.cfg.GrpcPort),
+		GatewayAddress:      gatewayAddress,
+		RemoteAddress:       grpcAddress,
 		AllowedOrigins:      s.cfg.AllowedOrigins,
 		EndpointsToRegister: []gateway.RegistrationFunc{faucetpb.RegisterFaucetHandlerFromEndpoint},
 	})
+	log.Infof("Starting JSON http server %s", gatewayAddress)
 	gatewaySrv.Start()
 
 	// Listen for any process interrupts.
@@ -140,13 +140,14 @@ func (s *Server) Start() {
 	<-stop
 }
 
-func (s *Server) queryFundsLeft() {
-	client, err := ethclient.DialContext(context.Background(), s.cfg.Web3Provider)
+// Query the funds left in the faucet account and log them to the uer.
+func (s *Server) queryFundsLeft(ctx context.Context) {
+	client, err := ethclient.DialContext(ctx, s.cfg.Web3Provider)
 	if err != nil {
 		log.WithError(err).Fatalf("Could not dial %s", s.cfg.Web3Provider)
 	}
 	funder := crypto.PubkeyToAddress(s.pk.PublicKey)
-	bal, err := client.BalanceAt(context.Background(), funder, nil)
+	bal, err := client.BalanceAt(ctx, funder, nil)
 	if err != nil {
 		log.WithError(err).Fatalf("Could not retrieve funder's current balance")
 	}
@@ -154,22 +155,13 @@ func (s *Server) queryFundsLeft() {
 	log.WithFields(logrus.Fields{
 		"fundsInWei": bal,
 		"publicKey":  funder.Hex(),
-	}).Info("Funder details")
+	}).Info("Funder account details")
 }
 
-// Reduce the counter for each ip every few hours.
-func ipAddressCounterWatcher() {
-	ticker := time.NewTicker(pruneDuration)
-	for {
-		<-ticker.C
-		fundingLock.Lock()
-		log.Info("Decreasing requests counter for all recorded IP addresses")
-		for ip, ctr := range ipCounter {
-			if ctr == 0 {
-				continue
-			}
-			ipCounter[ip] = ctr - 1
-		}
-		fundingLock.Unlock()
-	}
+// Initialize a gRPC server and register handlers.
+func (s *Server) initializeGRPCServer() *grpc.Server {
+	grpcServer := grpc.NewServer()
+	faucetpb.RegisterFaucetServer(grpcServer, s)
+	reflection.Register(grpcServer)
+	return grpcServer
 }
