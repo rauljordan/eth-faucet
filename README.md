@@ -44,7 +44,7 @@ Usage:
 4. Obtain the address of your Ethereum node's HTTP API endpoint (by default, the faucet server uses http://localhost:8545 as the web3-provider)
 5. Run the faucet server with the required [parameters](#parameters)
 
-The faucet host an http JSON API on localhost:8000 by default and a gRPC server on localhost:500 for client access. Further customizations and required parameters are specified below:
+The faucet hosts an http JSON API on `localhost:8000` by default and a gRPC server on `localhost:5000` for client access. Further customizations and required parameters are specified below:
 
 #### Parameters
 
