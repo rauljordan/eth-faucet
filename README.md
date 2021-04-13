@@ -1,6 +1,6 @@
 # Ethereum Testnet Faucet 🚿
 
-This project defines a production ready faucet for the Ethereum test networks, allowing users to request and receive a specified amount of ETH every 24 hours to an address from a max of N different IP addresses (configurable) after passing [Google recaptcha](https://www.google.com/recaptcha/about/) verification. The API tracks IP addresses and wallet addresses which requested and resets them at configurable intervals.
+This project defines a production ready faucet for the Ethereum test networks, allowing users to request and receive a specified amount of ETH every X hours to an address from a max of N different IP addresses (configurable) after passing [Google recaptcha](https://www.google.com/recaptcha/about/) verification. The API tracks IP addresses and wallet addresses which requested and resets them at configurable intervals.
 
 The project comes with functional **React** and **Angular** applications to showcase the faucet.
 
